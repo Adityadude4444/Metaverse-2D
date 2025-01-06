@@ -6,17 +6,25 @@ import { SigninSchema, SignupSchema } from "../../types";
 import client from "@repo/db/client";
 import { compare, hash } from "../../scrypt";
 import { JWT_SECRET } from "../../config";
-
+const express = require("express");
 const jwt = require("jsonwebtoken");
 export const router = Router();
-
+router.use(express.json());
 router.post("/signup", async (req, res) => {
   console.log("inside signup");
-  // check the user
+
+  // Log the request body
+  console.log("Request Body:", JSON.stringify(req.body, null, 2));
+
+  // Validate the request body
   const parsedData = SignupSchema.safeParse(req.body);
+
   if (!parsedData.success) {
-    console.log("parsed data incorrect");
-    res.status(400).json({ message: "Validation failed" });
+    // Log detailed validation errors
+    console.log("Validation Error:", parsedData.error.errors);
+    res
+      .status(400)
+      .json({ message: "Validation failed", errors: parsedData.error.errors });
     return;
   }
 
@@ -30,12 +38,9 @@ router.post("/signup", async (req, res) => {
         role: parsedData.data.type === "admin" ? "Admin" : "User",
       },
     });
-    res.json({
-      userId: user.id,
-    });
+    res.json({ userId: user.id });
   } catch (e) {
-    console.log("erroer thrown");
-    console.log(e);
+    console.log("Error:", e);
     res.status(400).json({ message: "User already exists" });
   }
 });
